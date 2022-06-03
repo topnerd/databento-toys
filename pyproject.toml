@@ -1,0 +1,25 @@
+[tool.black]
+line-length = 80
+
+[tool.poetry]
+name = "dbtoys"
+version = "0.1.0"
+description = "Some toys created with the databento module."
+authors = ["Nick Macholl <nickmacholl@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/nmacholl/databento-toys"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+colorama = "^0.4.4"
+databento = {git = "git@github.com:databento/databento-python.git", rev = "dev"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+black = "^22.3.0"
+pylint = "^2.14.0"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
