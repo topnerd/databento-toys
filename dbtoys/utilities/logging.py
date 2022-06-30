@@ -50,9 +50,10 @@ def configure_file_logger(logger: Logger, log_file_name: str):
     try:
         makedirs(
             DEFAULT_LOG_FILE_PATH,
-            mode=0o600,
+            mode=0o744,
             exist_ok=True,
         )
+        DEFAULT_LOG_FILE_PATH.touch(mode=0o644, exist_ok=True)
     except OSError as exc:
         sys.stderr.write(f"Failed to create log file! {exc}\n")
         return
