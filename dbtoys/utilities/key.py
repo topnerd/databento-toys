@@ -11,7 +11,7 @@ from typing import Optional
 _LOG = logging.getLogger()
 
 # Some sane defaults for convenience.
-DEFAULT_KEY_FILENAME = ".dbkey"
+DEFAULT_KEY_FILENAME = ".bentokey"
 DEFAULT_PATHS = (
     Path(getcwd()),
     Path.home(),
@@ -86,9 +86,14 @@ def get_api_key(prompt_for_key: bool = False) -> str:
 
     if prompt_for_key:
         # Prompt the user for a key.
-        sys.stderr.write("Please enter a databento API key.\n")
-        user_key = sanitize_key(getpass(">> ", sys.stderr))
-        _LOG.debug("User provided %s as a key.", hide_key(user_key))
-        return user_key
+        try:
+            sys.stderr.write("Please enter a databento API key.\n")
+            user_key = sanitize_key(getpass("<> ", sys.stderr))
+            _LOG.debug("User provided %s as a key.", hide_key(user_key))
+        except KeyboardInterrupt as kbi:
+            _LOG.debug("Received interrupt signal, exiting")
+            raise SystemExit from kbi
+        else:
+            return user_key
 
     return ""
