@@ -1,12 +1,12 @@
 """Utility module for manging Databento API keys."""
 import logging
-import sys
 import re
+import sys
+from getpass import getpass
 from os import getcwd
 from pathlib import Path
 from typing import Iterable
 from typing import Optional
-from getpass import getpass
 
 _LOG = logging.getLogger()
 
