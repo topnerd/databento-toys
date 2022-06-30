@@ -8,9 +8,9 @@ from typing import Dict
 from typing import Iterable
 from typing import Tuple
 
-import utilities.app
-import utilities.key
-import utilities.logging
+import dbtoys.utilities.app
+import dbtoys.utilities.key
+import dbtoys.utilities.logging
 
 _LOG = logging.getLogger()
 _PROG = "dbclose"
@@ -18,7 +18,7 @@ _PROG = "dbclose"
 
 def _parse_args(*args) -> Dict:
     """Parses command line arguments for main"""
-    parser = utilities.app.ToyParser(
+    parser = dbtoys.utilities.app.ToyParser(
         prog=_PROG,
         description="Returns the close price of a given symbol.",
     )
@@ -54,15 +54,15 @@ def main(
     :param verbose: Enables printing of log records to stderr.
     :return: The close prices for the symbols in order.
     """
-    logging.config.dictConfig(utilities.logging.DEFAULT_LOGGING)
-    utilities.logging.configure_file_logger(
+    logging.config.dictConfig(dbtoys.utilities.logging.DEFAULT_LOGGING)
+    dbtoys.utilities.logging.configure_file_logger(
         logger=_LOG, log_file_name=f"{_PROG}.log"
     )
     _LOG.setLevel("NOTSET")
 
     if verbose:
         # If the --verbose flag was given we will print log events to stderr.
-        utilities.logging.configure_console_handler(
+        dbtoys.utilities.logging.configure_console_handler(
             logger=_LOG, stream=sys.stderr
         )
 
@@ -75,19 +75,16 @@ def main(
     )
 
     try:
-        api_key = utilities.key.get_api_key(prompt_for_key=True)
-        return _do_dbclose(api_key=api_key, symbols=symbols, date=date)
+        api_key = dbtoys.utilities.key.get_api_key(prompt_for_key=True)
+        return _do_dbclose()
     except Exception as exc:
         _LOG.exception("Terminating due to unhandled %s!", exc.__class__)
         raise exc
 
 
-def _do_dbclose(
-    api_key: str, symbols: Iterable[str], date: datetime.date
-) -> Tuple[float, ...]:
+def _do_dbclose():
     #  TODO: The actual thing ya idiot.
     return (0.0,)
 
 
-if __name__ == "__main__":
-    main(**_parse_args(sys.argv[1:]))
+main(**_parse_args(sys.argv[1:]))

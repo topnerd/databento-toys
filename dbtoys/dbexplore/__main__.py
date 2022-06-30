@@ -4,25 +4,23 @@ import cmd
 import logging
 import logging.config
 import sys
-from typing import Dict
-from typing import Tuple
-from typing import Callable
-from typing import Optional
 from functools import lru_cache
-
 from pprint import pprint
+from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+
 import databento
-import databento.historical.error
 import databento.common.enums
-
-import utilities.app
-import utilities.key
-import utilities.logging
-
-from utilities.monad import Result
-
+import databento.historical.error
 from colorama import Fore
 from colorama import Style
+
+import dbtoys.utilities.app
+import dbtoys.utilities.key
+import dbtoys.utilities.logging
+from dbtoys.utilities.monad import Result
 
 _LOG = logging.getLogger()
 _PROG = "dbexplore"
@@ -161,7 +159,7 @@ class ExplorerDispatch(cmd.Cmd):
 
 def _parse_args(*args) -> Dict:
     """"""
-    parser = utilities.app.ToyParser(
+    parser = dbtoys.utilities.app.ToyParser(
         prog=_PROG,
         description="tool for exploring databento data sets",
     )
@@ -187,15 +185,15 @@ def main(cantrip: bool, verbose: bool):
     :param list_datasets: print a list of datasets; skips entering the readline interface.
     :param verbose: Enables printing of log records to stderr.
     """
-    logging.config.dictConfig(utilities.logging.DEFAULT_LOGGING)
-    utilities.logging.configure_file_logger(
+    logging.config.dictConfig(dbtoys.utilities.logging.DEFAULT_LOGGING)
+    dbtoys.utilities.logging.configure_file_logger(
         logger=_LOG, log_file_name=f"{_PROG}.log"
     )
     _LOG.setLevel("NOTSET")
 
     if verbose:
         # If the --verbose flag was given we will print log events to stderr.
-        utilities.logging.configure_console_handler(
+        dbtoys.utilities.logging.configure_console_handler(
             logger=_LOG, stream=sys.stderr
         )
 
@@ -207,7 +205,7 @@ def main(cantrip: bool, verbose: bool):
     )
 
     try:
-        api_key = utilities.key.get_api_key(prompt_for_key=True)
+        api_key = dbtoys.utilities.key.get_api_key(prompt_for_key=True)
         explorer = ExplorerDispatch(api_key=api_key)
         explorer.cmdloop()
     except Exception as exc:
@@ -215,5 +213,4 @@ def main(cantrip: bool, verbose: bool):
         raise exc
 
 
-if __name__ == "__main__":
-    main(**_parse_args(sys.argv[1:]))
+main(**_parse_args(sys.argv[1:]))
