@@ -15,6 +15,6 @@ DBTOYS_SPLASH = f"""{Style.BRIGHT}{Fore.MAGENTA}┏━┳━┓ _| _ _|_ _ {Fore
 DBTOYS_GOODBYE = (
     f"Log directory: {dbtoys.utilities.logging.DEFAULT_LOG_FILE_PATH}\n"
     "Visit the project at "
-    f"{Style.BRIGHT}https://github.com/nmacholl/databento-toys{Style.RESET_ALL}"
+    f"{Style.BRIGHT}https://github.com/topnerd/databento-toys{Style.RESET_ALL}"
     "\n\u518d\u89c1"
 )
