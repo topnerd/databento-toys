@@ -24,8 +24,9 @@ def _parse_args(*args) -> Dict:
     group.add_argument(
         "-c",
         "--cantrip",
-        action="store_true",
-        help="execute commands from stdin and then exit",
+        nargs="+",
+        type=str,
+        help="parse further arguments as a command and exit without entering the read-line interface",
     )
     parser.add_argument(
         "-v",
@@ -36,7 +37,7 @@ def _parse_args(*args) -> Dict:
     return dict(vars(parser.parse_args(*args)).items())
 
 
-def main(cantrip: bool, verbose: bool):
+def main(cantrip: str = "", verbose: bool = False):
     """Runs the toy dbexplore.
     :param cantrip: Read all commands from stdin and then exit.
     :param list_datasets: print a list of datasets; skips entering the readline interface.
@@ -64,7 +65,15 @@ def main(cantrip: bool, verbose: bool):
     try:
         api_key = dbtoys.utilities.key.get_api_key(prompt_for_key=True)
         explorer = DataBentoExplorer(api_key=api_key)
-        explorer.cmdloop()
+        if cantrip:
+            cantrip_str = " ".join(cantrip)
+            _LOG.debug(
+                "Running cantrip %s",
+                cantrip_str,
+            )
+            explorer.onecmd(cantrip_str)
+        else:
+            explorer.cmdloop()
     except Exception as exc:
         _LOG.exception("Terminating due to unhandled %s!", exc.__class__)
         raise exc
