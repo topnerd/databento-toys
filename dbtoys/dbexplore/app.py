@@ -1,5 +1,4 @@
 """The dbexplore application"""
-import datetime
 import functools
 import logging
 from pprint import pformat
@@ -26,7 +25,7 @@ _KNOWN_ENCODINGS: Tuple[str, ...] = tuple(x.value for x in Encoding)
 _parse_list_datasets: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_list_datasets.add_argument(
     "start",
-    type=datetime.date.fromisoformat,
+    type=pandas.Timestamp.fromisoformat,
     nargs="?",
     metavar="YYYY-MM-DD",
     help="the earlierst date to list datasets from in ISO 8601 format",
@@ -34,7 +33,7 @@ _parse_list_datasets.add_argument(
 )
 _parse_list_datasets.add_argument(
     "end",
-    type=datetime.date.fromisoformat,
+    type=pandas.Timestamp.fromisoformat,
     nargs="?",
     metavar="YYYY-MM-DD",
     help="the latest date to list datasets from in ISO 8601 format",
@@ -50,7 +49,7 @@ _parse_list_schemas.add_argument(
 )
 _parse_list_schemas.add_argument(
     "start",
-    type=datetime.date.fromisoformat,
+    type=pandas.Timestamp.fromisoformat,
     nargs="?",
     metavar="YYYY-MM-DD",
     help="the earlierst date to list schemas from in ISO 8601 format",
@@ -58,7 +57,7 @@ _parse_list_schemas.add_argument(
 )
 _parse_list_schemas.add_argument(
     "end",
-    type=datetime.date.fromisoformat,
+    type=pandas.Timestamp.fromisoformat,
     nargs="?",
     metavar="YYYY-MM-DD",
     help="the latest date to list schemas from in ISO 8601 format",
