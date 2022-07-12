@@ -8,11 +8,12 @@ from typing import Tuple
 
 import cmd2
 import databento
-from databento.common.enums import Schema
+import pandas
+from colorama import Fore
 from databento.common.enums import Dataset
 from databento.common.enums import Encoding
+from databento.common.enums import Schema
 from databento.historical.error import BentoError
-import pandas
 
 _LOG = logging.getLogger()
 
@@ -104,10 +105,26 @@ def log_command(func: Callable) -> Callable:
 class DataBentoExplorer(cmd2.Cmd):
     """The read-line interpreter for dbexplore."""
 
+    LIST_COMMANDS: str = "List Commands"
+
     def __init__(self, api_key: str):
         super().__init__()
+        self.prompt = f"{Fore.MAGENTA}>> {Fore.RESET}"
+        self.continuation_prompt = f"{Fore.MAGENTA}>{Fore.RESET}"
+
+        # Remove some builtin cmd2 commands
+        del cmd2.Cmd.do_edit
+        del cmd2.Cmd.do_eof
+        del cmd2.Cmd.do_ipy
+        del cmd2.Cmd.do_py
+        del cmd2.Cmd.do_run_pyscript
+        del cmd2.Cmd.do_run_script
+        del cmd2.Cmd.do_shell
+        del cmd2.Cmd.do_shortcuts
+
+        # Databento
         self._historical_client: databento.Historical = databento.Historical(
-            key=api_key
+            key=api_key,
         )
 
     @property
@@ -116,6 +133,19 @@ class DataBentoExplorer(cmd2.Cmd):
         return self._historical_client
 
     @log_command
+    @cmd2.with_category(LIST_COMMANDS)
+    def do_list_compressions(self, _):
+        """list all compressions"""
+        try:
+            result = self.historical_client.metadata.list_compressions()
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            self.columnize(result)
+
+    @log_command
+    @cmd2.with_category(LIST_COMMANDS)
     @cmd2.with_argparser(_parse_list_datasets)  # type: ignore
     def do_list_datasets(self, args):
         """Calls the ExplorerApp to process list_datasets"""
@@ -128,25 +158,22 @@ class DataBentoExplorer(cmd2.Cmd):
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
-            self.poutput("\n".join(result))
+            self.columnize(result)
 
     @log_command
-    @cmd2.with_argparser(_parse_list_schemas)  # type: ignore
-    def do_list_schemas(self, args):
-        """list all available schemas for a data set within the given start and end dates"""
+    @cmd2.with_category(LIST_COMMANDS)
+    def do_list_encodings(self, _):
+        """list all encodings"""
         try:
-            result = self.historical_client.metadata.list_schemas(
-                dataset=Dataset(args.dataset),
-                start=args.start,
-                end=args.end,
-            )
+            result = self.historical_client.metadata.list_encodings()
         except BentoError as exc:
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
-            self.poutput("\n".join(result))
+            self.columnize(result)
 
     @log_command
+    @cmd2.with_category(LIST_COMMANDS)
     @cmd2.with_argparser(_parse_list_fields)  # type: ignore
     def do_list_fields(self, args):
         """list all fields from the given dataset and schema"""
@@ -160,4 +187,22 @@ class DataBentoExplorer(cmd2.Cmd):
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
+            # TODO: Need to make these json outputs more readable.
             self.poutput(pformat(result))
+
+    @log_command
+    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_argparser(_parse_list_schemas)  # type: ignore
+    def do_list_schemas(self, args):
+        """list all available schemas for a data set within the given start and end dates"""
+        try:
+            result = self.historical_client.metadata.list_schemas(
+                dataset=Dataset(args.dataset),
+                start=args.start,
+                end=args.end,
+            )
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            self.columnize(result)

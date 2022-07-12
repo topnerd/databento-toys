@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 """A readline databento dataset explorer."""
 import logging
 import logging.config
