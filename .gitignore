@@ -1,0 +1,9 @@
+# Databento Secrets
+.bentokey
+
+# Python
+*.pyc
+
+# Poetry
+poetry.lock
+poetry.toml
