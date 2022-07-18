@@ -106,20 +106,20 @@ class DataBentoExplorer(cmd2.Cmd):
 
     LIST_COMMANDS: str = "List Commands"
 
-    def __init__(self, api_key: str):
-        super().__init__()
+    def __init__(self, api_key: str, **kwargs):
+        super().__init__(**kwargs)
         self.prompt = f"{Fore.MAGENTA}>> {Fore.RESET}"
         self.continuation_prompt = f"{Fore.MAGENTA}>{Fore.RESET}"
 
-        # Remove some builtin cmd2 commands
-        del cmd2.Cmd.do_edit
-        del cmd2.Cmd.do_eof
-        del cmd2.Cmd.do_ipy
-        del cmd2.Cmd.do_py
-        del cmd2.Cmd.do_run_pyscript
-        del cmd2.Cmd.do_run_script
-        del cmd2.Cmd.do_shell
-        del cmd2.Cmd.do_shortcuts
+        # Hide some builtin cmd2 commands
+        self.hidden_commands.append("edit")
+        self.hidden_commands.append("eof")
+        self.hidden_commands.append("ipy")
+        self.hidden_commands.append("py")
+        self.hidden_commands.append("run_pyscript")
+        self.hidden_commands.append("run_script")
+        self.hidden_commands.append("shell")
+        self.hidden_commands.append("shortcuts")
 
         # Databento
         self._historical_client: databento.Historical = databento.Historical(
