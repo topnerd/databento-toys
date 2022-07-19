@@ -8,13 +8,15 @@ from logging import StreamHandler
 from os import makedirs
 from pathlib import Path
 from tempfile import gettempdir
+from typing import Any
+from typing import Dict
 from typing import TextIO
 
 from colorama import Fore
 
-DEFAULT_LOG_FILE_PATH = Path(gettempdir()) / "dbtoys"
+DEFAULT_LOG_FILE_PATH: Path = Path(gettempdir()) / "dbtoys"
 
-DEFAULT_LOGGING = {
+DEFAULT_LOGGING: Dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
 }

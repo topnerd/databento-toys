@@ -8,11 +8,11 @@ import dbtoys.utilities.logging
 # Initialize colorama, required for some platforms.
 init()
 
-DBTOYS_SPLASH = f"""{Style.BRIGHT}{Fore.MAGENTA}┏━┳━┓ _| _ _|_ _ {Fore.WHITE}|_  _ __ _|_ _
+DBTOYS_SPLASH: str = f"""{Style.BRIGHT}{Fore.MAGENTA}┏━┳━┓ _| _ _|_ _ {Fore.WHITE}|_  _ __ _|_ _
 {Fore.MAGENTA}┃ ┣━┫(_|(_| |_(_|{Fore.WHITE}|_)(/_| | |_(_)
 {Fore.MAGENTA}┗━┻━┛{Style.RESET_ALL}{Fore.CYAN} ━━━━━━━━━━━━━━━━━━━━ toys{Fore.RESET}"""
 
-DBTOYS_GOODBYE = (
+DBTOYS_GOODBYE: str = (
     f"Log directory: {dbtoys.utilities.logging.DEFAULT_LOG_FILE_PATH}\n"
     "Visit the project at "
     f"{Style.BRIGHT}https://github.com/topnerd/databento-toys{Style.RESET_ALL}"
