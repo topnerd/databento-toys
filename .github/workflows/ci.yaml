@@ -1,0 +1,54 @@
+name: databento-toys
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-lastest, windows-latest]
+        python-version: ["3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      - name: Install dbtoys
+        run: poetry install --no-interaction
+      - name: black
+        if: always()
+        run: |
+          poetry run black --check --diff --color .
+      - name: pylint
+        if: always()
+        run: |
+          poetry run poetry run pylint --errors-only --output-format colorized dbtoys tests
+      - name: pytest
+        if: always()
+        run: |
+          poetry run pytest -v tests --junitxml="pytest_results.xml"
+      - name: pytest results
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          annotate_only: true
+          report_paths: "pytest_results.xml"
+          require_tests: true
+          summary: pytest results for ${{ matrix.platform }} using python v${{ matrix.python-version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
