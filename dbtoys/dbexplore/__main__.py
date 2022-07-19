@@ -4,7 +4,7 @@ import logging.config
 import sys
 from typing import Dict
 
-import dbtoys.utilities.app
+import dbtoys.utilities.parser
 import dbtoys.utilities.key
 import dbtoys.utilities.logging
 from dbtoys.dbexplore.app import DataBentoExplorer
@@ -15,7 +15,7 @@ _PROG = "dbexplore"
 
 def _parse_args(*args) -> Dict:
     """"""
-    parser = dbtoys.utilities.app.ToyParser(
+    parser = dbtoys.utilities.parser.ToyParser(
         prog=_PROG,
         description="tool for exploring databento data sets",
     )

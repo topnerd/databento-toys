@@ -8,7 +8,7 @@ from typing import Dict
 from typing import Iterable
 from typing import Tuple
 
-import dbtoys.utilities.app
+import dbtoys.utilities.parser
 import dbtoys.utilities.key
 import dbtoys.utilities.logging
 
@@ -18,7 +18,7 @@ _PROG = "dbclose"
 
 def _parse_args(*args) -> Dict:
     """Parses command line arguments for main"""
-    parser = dbtoys.utilities.app.ToyParser(
+    parser = dbtoys.utilities.parser.ToyParser(
         prog=_PROG,
         description="Returns the close price of a given symbol.",
     )
