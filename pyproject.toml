@@ -30,6 +30,10 @@ pylint = "^2.14.0"
 isort = "^5.10.1"
 PyHamcrest = "^2.0.3"
 
+[tool.poetry.scripts]
+dbclose = "dbtoys.dbclose:__main__"
+dbexplore = "dbtoys.dbexplore:__main__"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
