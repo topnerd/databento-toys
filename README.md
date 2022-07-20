@@ -1,6 +1,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/topnerd/databento-toys)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/topnerd/databento-toys/databento-toys)
 ![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
+![License](https://img.shields.io/github/license/topnerd/databento-toys)
 ![https://github.com/databento/databento-python](https://img.shields.io/badge/powered%20by-databento-blueviolet)
 
 # Databento Toys
