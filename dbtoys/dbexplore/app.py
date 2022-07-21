@@ -352,7 +352,7 @@ class DataBentoExplorer(cmd2.Cmd):
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
-            formatted = [str(result), f"({humanize.naturalsize(result)})"]
+            formatted = [str(result), humanize.naturalsize(result)]
             self.columnize(formatted)
 
     @log_command

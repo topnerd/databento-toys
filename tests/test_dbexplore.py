@@ -2,12 +2,14 @@
 import json
 from io import StringIO
 from pathlib import Path
+from typing import Any
 from typing import Dict
-from typing import List
 from typing import Iterable
+from typing import List
+from typing import Optional
 from typing import Type
 from typing import Union
-from unittest.mock import MagicMock
+from unittest import mock
 
 import humanize
 import pytest
@@ -41,7 +43,7 @@ def fixture_dbexplore(mock_stdout) -> DataBentoExplorer:
         api_key="UNITTEST",
         stdout=mock_stdout,
     )
-    setattr(app, "_historical_client", MagicMock())
+    setattr(app, "_historical_client", mock.MagicMock())
     return app
 
 
@@ -67,6 +69,41 @@ def fixture_command_dict(
         raise EnvironmentError(
             f"Could not load test data: {expected_file_name}",
         ) from exc
+
+
+def call_command(
+    dbexplore: DataBentoExplorer,
+    command: str,
+    args: Iterable[str],
+    return_value: Optional[Any] = None,
+    side_effect: Optional[Any] = None,
+):
+    """Helper method to mock and call a dbexplore command."""
+    cmd_func = getattr(dbexplore.historical_client.metadata, command)
+    cmd_func.return_value = return_value
+    cmd_func.side_effect = side_effect
+    dbexplore.onecmd(" ".join([command, *args]))
+
+
+def call_command_and_assert(
+    dbexplore: DataBentoExplorer,
+    command: str,
+    args: Iterable[str],
+    return_value: Optional[Any] = None,
+    side_effect: Optional[Any] = None,
+):
+    """Helper method to mock and call a dbexplore command.
+    Additionally, asserts that the method was called.
+    """
+    call_command(
+        dbexplore=dbexplore,
+        command=command,
+        args=args,
+        return_value=return_value,
+        side_effect=side_effect,
+    )
+    cmd_func = getattr(dbexplore.historical_client.metadata, command)
+    cmd_func.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -100,10 +137,12 @@ def test_command_bentoexception(
     """Tests that every dbexplore command handles BentoExceptions generated from
     the databento calls.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.side_effect = bento_exception
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        side_effect=bento_exception,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -127,10 +166,12 @@ def test_get_billable_size(
     """Test get_billable_size displaying a list of results.
     The result is integer number of bytes but we display a human friendly size as well.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=result,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -142,29 +183,30 @@ def test_get_billable_size(
     )
 
 
+@pytest.mark.parametrize("command", [pytest.param("get_cost")])
 @pytest.mark.parametrize(
-    "dataset,symbols,schema,result",
+    "args, result",
     [
-        pytest.param("GLBX.MDP3", "BAC", "trades", 100.00),
-        pytest.param("GLBX.MDP3", "TSLA", "mbo", 123.4567),
-        pytest.param("XNAS.ITCH", "*", "ohlcv-1s", 0.0),
+        pytest.param(["GLBX.MDP3", "BAC", "trades"], 100.00),
+        pytest.param(["GLBX.MDP3", "TSLA", "mbo"], 123.4567),
+        pytest.param(["XNAS.ITCH", "*", "ohlcv-1s"], 0.0),
     ],
 )
 def test_get_cost(
     result: float,
     dbexplore: DataBentoExplorer,
-    schema: str,
-    symbols: str,
-    dataset: str,
-    command: str = "get_cost",
+    command: str,
+    args: Iterable[str],
 ):
     """Test get_cost displaying the price as a float.
     Costs are printed to the nearest hundreth.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, dataset, symbols, schema]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=result,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -189,10 +231,12 @@ def test_get_shape(
     """Test get_size displaying a list of results.
     The result is a tuple with two elements.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=result,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -226,10 +270,12 @@ def test_list_commands(
     args: Iterable[str],
 ):
     """Tests list commands display results as text with minimal formatting."""
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=result,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -253,10 +299,12 @@ def test_list_fields(
     """Test list_fields displaying a table of results.
     The entries will be printed using tabulate.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = command_data
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=command_data,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
@@ -289,10 +337,12 @@ def test_list_unit_prices(
     The entries will be printed using tabulate.
     Costs are printed to the nearest hundreth.
     """
-    cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = command_data
-    dbexplore.onecmd(" ".join([command, *args]))
-    cmd_func.assert_called()
+    call_command_and_assert(
+        dbexplore,
+        command=command,
+        args=args,
+        return_value=command_data,
+    )
 
     dbexplore.stdout.seek(0)
     output = dbexplore.stdout.readlines()
