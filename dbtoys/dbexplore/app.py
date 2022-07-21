@@ -5,13 +5,13 @@ import logging.config
 import sys
 from pprint import pformat
 from typing import Callable
-from typing import Dict
 from typing import Tuple
 
 import cmd2
 import databento
 import pandas
 from colorama import Fore
+from databento.common.enums import Compression
 from databento.common.enums import Dataset
 from databento.common.enums import Encoding
 from databento.common.enums import Schema
@@ -25,32 +25,10 @@ import dbtoys.utilities.parser
 _LOG = logging.getLogger()
 _PROG = "dbexplore"
 
-_KNOWN_DATASETS: Tuple[str, ...] = tuple(x.value for x in Dataset)
-_KNOWN_SCHEMAS: Tuple[str, ...] = tuple(x.value for x in Schema)
-_KNOWN_ENCODINGS: Tuple[str, ...] = tuple(x.value for x in Encoding)
-
-
-def _parse_args(*args) -> Dict:
-    """"""
-    parser = dbtoys.utilities.parser.ToyParser(
-        prog=_PROG,
-        description="tool for exploring databento data sets",
-    )
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "-c",
-        "--cantrip",
-        nargs="+",
-        type=str,
-        help="parse further arguments as a command and exit without entering the read-line interface",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="enables printing of the log to stderr",
-    )
-    return dict(vars(parser.parse_args(*args)).items())
+KNOWN_COMPRESSIONS: Tuple[str, ...] = tuple(x.value for x in Compression)
+KNOWN_DATASETS: Tuple[str, ...] = tuple(x.value for x in Dataset)
+KNOWN_SCHEMAS: Tuple[str, ...] = tuple(x.value for x in Schema)
+KNOWN_ENCODINGS: Tuple[str, ...] = tuple(x.value for x in Encoding)
 
 
 def main(cantrip: str = "", verbose: bool = False) -> int:
@@ -99,68 +77,150 @@ def main(cantrip: str = "", verbose: bool = False) -> int:
 
 
 # Command Parsers
+_parse_get_cost: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
+_parse_get_cost.add_argument(
+    "dataset",
+    choices=KNOWN_DATASETS,
+    type=str,
+    help="the target dataset",
+)
+_parse_get_cost.add_argument(
+    "symbols", type=str, help="one or more symbols separated by commas"
+)
+_parse_get_cost.add_argument(
+    "schema",
+    choices=KNOWN_SCHEMAS,
+    type=str,
+    help="a data schema",
+)
+_parse_get_cost.add_argument(
+    "encoding",
+    choices=KNOWN_ENCODINGS,
+    type=str,
+    nargs="?",
+    help="a data encoding",
+    const=None,
+)
+_parse_get_cost.add_argument(
+    "compression",
+    choices=KNOWN_COMPRESSIONS,
+    type=str,
+    nargs="?",
+    help="a data compression",
+    const=None,
+)
+_parse_get_cost.add_argument(
+    "--start",
+    "-s",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the earlierst date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+_parse_get_cost.add_argument(
+    "--end",
+    "-e",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the latest date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+
+_parse_get_shape: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
+_parse_get_shape.add_argument(
+    "dataset",
+    choices=KNOWN_DATASETS,
+    type=str,
+    help="the target dataset",
+)
+_parse_get_shape.add_argument(
+    "symbols", type=str, help="one or more symbols separated by commas"
+)
+_parse_get_shape.add_argument(
+    "schema",
+    choices=KNOWN_SCHEMAS,
+    type=str,
+    help="a data schema",
+)
+_parse_get_shape.add_argument(
+    "--start",
+    "-s",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the earlierst date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+_parse_get_shape.add_argument(
+    "--end",
+    "-e",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the latest date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+
 _parse_list_datasets: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_list_datasets.add_argument(
-    "start",
+    "--start",
+    "-s",
     type=pandas.Timestamp.fromisoformat,
-    nargs="?",
-    metavar="YYYY-MM-DD",
-    help="the earlierst date to list datasets from in ISO 8601 format",
-    default=pandas.Timestamp.today().date().isoformat(),
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the earlierst date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
 )
 _parse_list_datasets.add_argument(
-    "end",
+    "--end",
+    "-e",
     type=pandas.Timestamp.fromisoformat,
-    nargs="?",
-    metavar="YYYY-MM-DD",
-    help="the latest date to list datasets from in ISO 8601 format",
-    default=pandas.Timestamp.today().date().isoformat(),
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the latest date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
 )
 
 _parse_list_schemas: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_list_schemas.add_argument(
     "dataset",
-    choices=_KNOWN_DATASETS,
+    choices=KNOWN_DATASETS,
     type=str,
-    help="the dataset to query",
+    help="the target dataset",
 )
 _parse_list_schemas.add_argument(
-    "start",
+    "--start",
+    "-s",
     type=pandas.Timestamp.fromisoformat,
-    nargs="?",
-    metavar="YYYY-MM-DD",
-    help="the earlierst date to list schemas from in ISO 8601 format",
-    default=pandas.Timestamp.today().date().isoformat(),
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the earlierst date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
 )
 _parse_list_schemas.add_argument(
-    "end",
+    "--end",
+    "-e",
     type=pandas.Timestamp.fromisoformat,
-    nargs="?",
-    metavar="YYYY-MM-DD",
-    help="the latest date to list schemas from in ISO 8601 format",
-    default=pandas.Timestamp.today().date().isoformat(),
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the latest date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
 )
 
 _parse_list_fields: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_list_fields.add_argument(
     "dataset",
-    choices=_KNOWN_DATASETS,
+    choices=KNOWN_DATASETS,
     type=str,
-    help="the dataset to query",
+    help="the target dataset",
 )
 _parse_list_fields.add_argument(
     "schema",
-    choices=_KNOWN_SCHEMAS,
+    choices=KNOWN_SCHEMAS,
     type=str,
-    help="the schema to list fields from",
+    help="a data schema",
 )
 _parse_list_fields.add_argument(
     "encoding",
-    choices=_KNOWN_ENCODINGS,
+    choices=KNOWN_ENCODINGS,
     type=str,
     nargs="?",
-    help="the encoding to list fields from",
-    default=None,
+    help="a data encoding",
+    const=None,
 )
 
 
@@ -181,7 +241,7 @@ def log_command(func: Callable) -> Callable:
 class DataBentoExplorer(cmd2.Cmd):
     """The read-line interpreter for dbexplore."""
 
-    LIST_COMMANDS: str = "List Commands"
+    METADATA_COMMANDS: str = "Metadata Commands"
 
     def __init__(self, api_key: str, **kwargs):
         super().__init__(**kwargs)
@@ -209,9 +269,47 @@ class DataBentoExplorer(cmd2.Cmd):
         return self._historical_client
 
     @log_command
-    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_category(METADATA_COMMANDS)
+    @cmd2.with_argparser(_parse_get_cost)  # type: ignore
+    def do_get_cost(self, args):
+        """Gets the cost of timeseries data."""
+        try:
+            result = self.historical_client.metadata.get_cost(
+                dataset=args.dataset,
+                symbols=args.symbols.split(","),
+                schema=args.schema,
+                start=pandas.Timestamp(args.start),
+                end=pandas.Timestamp(args.end),
+            )
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            self.poutput(f"${result}")
+
+    @log_command
+    @cmd2.with_category(METADATA_COMMANDS)
+    @cmd2.with_argparser(_parse_get_shape)  # type: ignore
+    def do_get_shape(self, args):
+        """Gets the dimensions of timeseries data."""
+        try:
+            result = self.historical_client.metadata.get_shape(
+                dataset=args.dataset,
+                symbols=args.symbols.split(","),
+                schema=args.schema,
+                start=pandas.Timestamp(args.start),
+                end=pandas.Timestamp(args.end),
+            )
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            self.columnize([str(r) for r in result])
+
+    @log_command
+    @cmd2.with_category(METADATA_COMMANDS)
     def do_list_compressions(self, _):
-        """list all compressions"""
+        """List all compressions"""
         try:
             result = self.historical_client.metadata.list_compressions()
         except BentoError as exc:
@@ -221,10 +319,10 @@ class DataBentoExplorer(cmd2.Cmd):
             self.columnize(result)
 
     @log_command
-    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_datasets)  # type: ignore
     def do_list_datasets(self, args):
-        """Calls the ExplorerApp to process list_datasets"""
+        """List all datasets"""
         try:
             result = self.historical_client.metadata.list_datasets(
                 start=pandas.Timestamp(args.start),
@@ -237,9 +335,9 @@ class DataBentoExplorer(cmd2.Cmd):
             self.columnize(result)
 
     @log_command
-    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_category(METADATA_COMMANDS)
     def do_list_encodings(self, _):
-        """list all encodings"""
+        """List all encodings"""
         try:
             result = self.historical_client.metadata.list_encodings()
         except BentoError as exc:
@@ -249,10 +347,10 @@ class DataBentoExplorer(cmd2.Cmd):
             self.columnize(result)
 
     @log_command
-    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_fields)  # type: ignore
     def do_list_fields(self, args):
-        """list all fields from the given dataset and schema"""
+        """List all fields from the given dataset and schema"""
         try:
             result = self.historical_client.metadata.list_fields(
                 dataset=args.dataset,
@@ -280,10 +378,10 @@ class DataBentoExplorer(cmd2.Cmd):
             self.ppaged("\n\n".join(output))
 
     @log_command
-    @cmd2.with_category(LIST_COMMANDS)
+    @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_schemas)  # type: ignore
     def do_list_schemas(self, args):
-        """list all available schemas for a data set within the given start and end dates"""
+        """List all available schemas for a data set within the given start and end dates"""
         try:
             result = self.historical_client.metadata.list_schemas(
                 dataset=Dataset(args.dataset),

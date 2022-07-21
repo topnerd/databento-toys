@@ -15,6 +15,7 @@ from databento.historical.error import BentoServerError
 # pyright: reportPrivateImportUsage=false
 from hamcrest import assert_that
 from hamcrest import empty
+from hamcrest import equal_to
 from hamcrest import has_item
 from hamcrest import string_contains_in_order
 
@@ -55,6 +56,66 @@ def fixture_list_fields_data(dataset: str, schema: str, encoding: str) -> Dict:
         pytest.fail(
             f"No test data for 'list_fields {dataset} {schema} {encoding}'. Do you need to add it?\n{exc}"
         )
+
+
+@pytest.mark.parametrize(
+    "dataset,symbols,schema,result",
+    [
+        pytest.param("GLBX.MDP3", "BAC", "trades", 100.00),
+        pytest.param("GLBX.MDP3", "TSLA", "mbo", 123.4567),
+        pytest.param("XNAS.ITCH", "*", "ohlcv-1s", 0.0),
+    ],
+)
+def test_get_cost(
+    result: float,
+    dbexplore: DataBentoExplorer,
+    _stdout: StringIO,
+    schema: str,
+    symbols: str,
+    dataset: str,
+    command: str = "get_cost",
+):
+    """Test get_cost displaying the price as a float."""
+    cmd_func = getattr(dbexplore.historical_client.metadata, command)
+    cmd_func.return_value = result
+    dbexplore.onecmd(" ".join([command, dataset, symbols, schema]))
+    cmd_func.assert_called()
+
+    _stdout.seek(0)
+    output = _stdout.readlines()
+    assert_that(output[0], equal_to(f"${result}\n"))
+
+
+@pytest.mark.parametrize(
+    "dataset,symbols,schema,result",
+    [
+        pytest.param("GLBX.MDP3", "BAC", "trades", [0, 0]),
+        pytest.param("GLBX.MDP3", "TSLA", "mbo", [5, 5]),
+        pytest.param("XNAS.ITCH", "*", "ohlcv-1s", [100, 100]),
+    ],
+)
+def test_get_shape(
+    result: Iterable[int],
+    dbexplore: DataBentoExplorer,
+    _stdout: StringIO,
+    schema: str,
+    symbols: str,
+    dataset: str,
+    command: str = "get_shape",
+):
+    """Test get_size displaying a list of results.
+    The result is a tuple with two elements.
+    """
+    cmd_func = getattr(dbexplore.historical_client.metadata, command)
+    cmd_func.return_value = result
+    dbexplore.onecmd(" ".join([command, dataset, symbols, schema]))
+    cmd_func.assert_called()
+
+    _stdout.seek(0)
+    output = _stdout.readlines()
+    assert_that(
+        output[0], string_contains_in_order(*(str(x) for x in result), "\n")
+    )
 
 
 @pytest.mark.parametrize(

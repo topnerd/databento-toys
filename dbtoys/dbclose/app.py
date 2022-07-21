@@ -3,9 +3,7 @@
 import datetime
 import logging
 import logging.config
-import os
 import sys
-from typing import Dict
 from typing import Iterable
 
 import dbtoys.utilities.key
@@ -14,35 +12,6 @@ import dbtoys.utilities.parser
 
 _LOG = logging.getLogger()
 _PROG = "dbclose"
-
-
-def _parse_args(*args) -> Dict:
-    """Parses command line arguments for main"""
-    parser = dbtoys.utilities.parser.ToyParser(
-        prog=_PROG,
-        description="Returns the close price of a given symbol.",
-    )
-    parser.add_argument(
-        "symbols",
-        nargs="+",
-        type=str,
-        help="the symbol(s) to request",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        type=datetime.date.fromisoformat,
-        metavar="YYYY-MM-DD",
-        help="the date to request in ISO 8601 format",
-        default=datetime.datetime.today(),
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="enables printing of the log to stderr",
-    )
-    return dict(vars(parser.parse_args(*args)).items())
 
 
 def main(symbols: Iterable[str], date: datetime.date, verbose: bool) -> int:
