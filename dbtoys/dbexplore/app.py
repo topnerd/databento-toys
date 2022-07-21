@@ -16,6 +16,7 @@ from databento.common.enums import Dataset
 from databento.common.enums import Encoding
 from databento.common.enums import Schema
 from databento.historical.error import BentoError
+from tabulate import tabulate
 
 import dbtoys.utilities.key
 import dbtoys.utilities.logging
@@ -262,8 +263,21 @@ class DataBentoExplorer(cmd2.Cmd):
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
-            # TODO: Need to make these json outputs more readable.
-            self.poutput(pformat(result))
+            output = []
+            for _, encodings in result.items():
+                for encoding, schemas in encodings.items():
+                    if args.encoding is None:
+                        output.append(f"--- {encoding} fields ---")
+                    for _, fields in schemas.items():
+                        output.append(
+                            tabulate(
+                                tabular_data=[
+                                    [k, v] for k, v in fields.items()
+                                ],
+                                headers=["field", "type"],
+                            )
+                        )
+            self.ppaged("\n\n".join(output))
 
     @log_command
     @cmd2.with_category(LIST_COMMANDS)

@@ -1,5 +1,8 @@
 """Unit tests for dbexplore"""
+import json
 from io import StringIO
+from pathlib import Path
+from typing import Dict
 from typing import Iterable
 from typing import Type
 from unittest.mock import MagicMock
@@ -12,9 +15,12 @@ from databento.historical.error import BentoServerError
 # pyright: reportPrivateImportUsage=false
 from hamcrest import assert_that
 from hamcrest import empty
+from hamcrest import has_item
 from hamcrest import string_contains_in_order
 
 from dbtoys.dbexplore.app import DataBentoExplorer
+
+TEST_DATA_PATH: Path = Path("tests", "test_dbexplore")
 
 
 @pytest.fixture(name="_stdout")
@@ -32,6 +38,23 @@ def fixture_dbexplore(_stdout) -> DataBentoExplorer:
     )
     setattr(app, "_historical_client", MagicMock())
     return app
+
+
+@pytest.fixture(name="list_fields_data")
+def fixture_list_fields_data(dataset: str, schema: str, encoding: str) -> Dict:
+    """Fixture for list_fields response data.
+    Since responses to list_fields are dictionaries, we store them externally as json.
+    """
+    try:
+        with open(
+            TEST_DATA_PATH / f"list_fields_{dataset}_{schema}_{encoding}.json",
+            encoding="utf-8",
+        ) as json_file:
+            return json.load(json_file)
+    except OSError as exc:
+        pytest.fail(
+            f"No test data for 'list_fields {dataset} {schema} {encoding}'. Do you need to add it?\n{exc}"
+        )
 
 
 @pytest.mark.parametrize(
@@ -73,7 +96,7 @@ def test_list_compressions(
 def test_list_compressions_exceptions(
     bento_exception: Type, dbexplore: DataBentoExplorer, _stdout: StringIO
 ):
-    """Test list_datasets properly consumes databento exceptions."""
+    """Test list_compressions properly consumes databento exceptions."""
     dbexplore.historical_client.metadata.list_datasets.side_effect = (
         bento_exception
     )
@@ -100,7 +123,7 @@ def test_list_datasets(
     _stdout: StringIO,
     command: str = "list_datasets",
 ):
-    """Test list_compressions displaying a list results.
+    """Test list_datasets displaying a list results.
     The entries will be padded with spaces to "columnize" the data.
     """
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
@@ -153,7 +176,7 @@ def test_list_encodings(
     _stdout: StringIO,
     command: str = "list_encodings",
 ):
-    """Test list_compressions displaying a list results.
+    """Test list_encodings displaying a list results.
     The entries will be padded with spaces to "columnize" the data.
     """
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
@@ -180,7 +203,7 @@ def test_list_encodings_exceptions(
     _stdout: StringIO,
     command: str = "list_encodings",
 ):
-    """Test list_datasets properly consumes databento exceptions."""
+    """Test list_encodings properly consumes databento exceptions."""
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
     cmd_func.side_effect = bento_exception
     dbexplore.onecmd(command)
@@ -192,32 +215,39 @@ def test_list_encodings_exceptions(
 
 
 @pytest.mark.parametrize(
-    "result",
+    "dataset, schema, encoding",
     [
-        # TODO: Need to emulate the json response here.
-        pytest.param({}, id=""),
+        pytest.param("GLBX.MDP3", "definition", "dbz"),
+        pytest.param("GLBX.MDP3", "trades", "dbz"),
     ],
 )
-@pytest.mark.xfail()
 def test_list_fields(
-    result: Iterable[str],
     dbexplore: DataBentoExplorer,
     _stdout: StringIO,
+    encoding: str,
+    schema: str,
+    dataset: str,
+    list_fields_data: Dict,
     command: str = "list_fields",
-    dataset: str = "GLBX.MDP3",  # We hard code this to pass the choices check.
-    schema: str = "trades",  # Same here.
 ):
-    """Test list_compressions displaying a list results.
-    The entries will be padded with spaces to "columnize" the data.
+    """Test list_fields displaying a table of results.
+    The entries will be printed using tabulate.
     """
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
-    cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, dataset, schema]))
+    cmd_func.return_value = list_fields_data
+    dbexplore.onecmd(" ".join([command, dataset, schema, encoding]))
     cmd_func.assert_called()
 
     _stdout.seek(0)
     output = _stdout.readlines()
-    assert_that(output[0], string_contains_in_order(*result, "\n"))
+
+    for _, encodings in list_fields_data.items():
+        for _, schemas in encodings.items():
+            for _, fields in schemas.items():
+                for field, _type in fields.items():
+                    assert_that(
+                        output, has_item(string_contains_in_order(field, _type))
+                    )
 
 
 @pytest.mark.parametrize(
@@ -236,7 +266,7 @@ def test_list_fields_exceptions(
     dataset: str = "GLBX.MDP3",  # We hard code this to pass the choices check.
     schema: str = "trades",  # Same here.
 ):
-    """Test list_datasets properly consumes databento exceptions."""
+    """Test list_fields properly consumes databento exceptions."""
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
     cmd_func.side_effect = bento_exception
     dbexplore.onecmd(" ".join([command, dataset, schema]))
@@ -263,7 +293,7 @@ def test_list_schemas(
     command: str = "list_schemas",
     dataset: str = "GLBX.MDP3",  # We hard code this to pass the choices check.
 ):
-    """Test list_compressions displaying a list results.
+    """Test list_schemas displaying a list results.
     The entries will be padded with spaces to "columnize" the data.
     """
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
@@ -291,7 +321,7 @@ def test_list_schemas_exceptions(
     command: str = "list_schemas",
     dataset: str = "GLBX.MDP3",  # We hard code this to pass the choices check.
 ):
-    """Test list_datasets properly consumes databento exceptions."""
+    """Test list_schemas properly consumes databento exceptions."""
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
     cmd_func.side_effect = bento_exception
     dbexplore.onecmd(" ".join([command, dataset]))
