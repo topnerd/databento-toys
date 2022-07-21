@@ -1,0 +1,16 @@
+{
+    "live": {
+        "mbo": 58.31,
+        "mbp-1": 63.25,
+        "mbp-10": 63.22,
+        "tbbo": 9.44,
+        "trades": 89.27,
+        "ohlcv-1s": 17.69,
+        "ohlcv-1m": 27.38,
+        "ohlcv-1h": 30.5,
+        "ohlcv-1d": 94.18,
+        "definition": 89.14,
+        "statistics": 63.09,
+        "status": 70.84
+    }
+}

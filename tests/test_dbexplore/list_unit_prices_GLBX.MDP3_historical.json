@@ -1,0 +1,16 @@
+{
+    "historical": {
+        "mbo": 6.69,
+        "mbp-1": 28.36,
+        "mbp-10": 26.81,
+        "tbbo": 85.15,
+        "trades": 42.84,
+        "ohlcv-1s": 70.0,
+        "ohlcv-1m": 72.69,
+        "ohlcv-1h": 79.9,
+        "ohlcv-1d": 80.94,
+        "definition": 24.81,
+        "statistics": 13.64,
+        "status": 46.93
+    }
+}

@@ -14,6 +14,7 @@ from colorama import Fore
 from databento.common.enums import Compression
 from databento.common.enums import Dataset
 from databento.common.enums import Encoding
+from databento.common.enums import FeedMode
 from databento.common.enums import Schema
 from databento.historical.error import BentoError
 from tabulate import tabulate
@@ -27,8 +28,9 @@ _PROG = "dbexplore"
 
 KNOWN_COMPRESSIONS: Tuple[str, ...] = tuple(x.value for x in Compression)
 KNOWN_DATASETS: Tuple[str, ...] = tuple(x.value for x in Dataset)
-KNOWN_SCHEMAS: Tuple[str, ...] = tuple(x.value for x in Schema)
 KNOWN_ENCODINGS: Tuple[str, ...] = tuple(x.value for x in Encoding)
+KNOWN_FEED_MODES: Tuple[str, ...] = tuple(x.value for x in FeedMode)
+KNOWN_SCHEMAS: Tuple[str, ...] = tuple(x.value for x in Schema)
 
 
 def main(cantrip: str = "", verbose: bool = False) -> int:
@@ -177,6 +179,28 @@ _parse_list_datasets.add_argument(
     default=pandas.Timestamp.today().date(),
 )
 
+_parse_list_fields: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
+_parse_list_fields.add_argument(
+    "dataset",
+    choices=KNOWN_DATASETS,
+    type=str,
+    help="the target dataset",
+)
+_parse_list_fields.add_argument(
+    "schema",
+    choices=KNOWN_SCHEMAS,
+    type=str,
+    help="a data schema",
+)
+_parse_list_fields.add_argument(
+    "encoding",
+    choices=KNOWN_ENCODINGS,
+    type=str,
+    nargs="?",
+    help="a data encoding",
+    const=None,
+)
+
 _parse_list_schemas: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_list_schemas.add_argument(
     "dataset",
@@ -201,26 +225,28 @@ _parse_list_schemas.add_argument(
     default=pandas.Timestamp.today().date(),
 )
 
-_parse_list_fields: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
-_parse_list_fields.add_argument(
+_parse_list_unit_prices: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
+_parse_list_unit_prices.add_argument(
     "dataset",
     choices=KNOWN_DATASETS,
     type=str,
     help="the target dataset",
 )
-_parse_list_fields.add_argument(
+_parse_list_unit_prices.add_argument(
+    "mode",
+    choices=KNOWN_FEED_MODES,
+    type=str,
+    nargs="?",
+    help="a feed mode",
+    default=None,
+)
+_parse_list_unit_prices.add_argument(
     "schema",
     choices=KNOWN_SCHEMAS,
     type=str,
-    help="a data schema",
-)
-_parse_list_fields.add_argument(
-    "encoding",
-    choices=KNOWN_ENCODINGS,
-    type=str,
     nargs="?",
-    help="a data encoding",
-    const=None,
+    help="a data schema",
+    default=None,
 )
 
 
@@ -278,14 +304,14 @@ class DataBentoExplorer(cmd2.Cmd):
                 dataset=args.dataset,
                 symbols=args.symbols.split(","),
                 schema=args.schema,
-                start=pandas.Timestamp(args.start),
-                end=pandas.Timestamp(args.end),
+                start=args.start,
+                end=args.end,
             )
         except BentoError as exc:
             self.perror(f"ERROR: {str(exc)}")
             _LOG.exception(exc)
         else:
-            self.poutput(f"${result}")
+            self.poutput(f"{result:.2f}")
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
@@ -297,8 +323,8 @@ class DataBentoExplorer(cmd2.Cmd):
                 dataset=args.dataset,
                 symbols=args.symbols.split(","),
                 schema=args.schema,
-                start=pandas.Timestamp(args.start),
-                end=pandas.Timestamp(args.end),
+                start=args.start,
+                end=args.end,
             )
         except BentoError as exc:
             self.perror(f"ERROR: {str(exc)}")
@@ -309,7 +335,7 @@ class DataBentoExplorer(cmd2.Cmd):
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
     def do_list_compressions(self, _):
-        """List all compressions"""
+        """List all compressions."""
         try:
             result = self.historical_client.metadata.list_compressions()
         except BentoError as exc:
@@ -322,11 +348,11 @@ class DataBentoExplorer(cmd2.Cmd):
     @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_datasets)  # type: ignore
     def do_list_datasets(self, args):
-        """List all datasets"""
+        """List all datasets."""
         try:
             result = self.historical_client.metadata.list_datasets(
-                start=pandas.Timestamp(args.start),
-                end=pandas.Timestamp(args.end),
+                start=args.start,
+                end=args.end,
             )
         except BentoError as exc:
             self.perror(f"ERROR: {str(exc)}")
@@ -337,7 +363,7 @@ class DataBentoExplorer(cmd2.Cmd):
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
     def do_list_encodings(self, _):
-        """List all encodings"""
+        """List all encodings."""
         try:
             result = self.historical_client.metadata.list_encodings()
         except BentoError as exc:
@@ -350,7 +376,7 @@ class DataBentoExplorer(cmd2.Cmd):
     @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_fields)  # type: ignore
     def do_list_fields(self, args):
-        """List all fields from the given dataset and schema"""
+        """List all fields from the given dataset and schema."""
         try:
             result = self.historical_client.metadata.list_fields(
                 dataset=args.dataset,
@@ -381,10 +407,10 @@ class DataBentoExplorer(cmd2.Cmd):
     @cmd2.with_category(METADATA_COMMANDS)
     @cmd2.with_argparser(_parse_list_schemas)  # type: ignore
     def do_list_schemas(self, args):
-        """List all available schemas for a data set within the given start and end dates"""
+        """List all available schemas for a data set within the given start and end dates."""
         try:
             result = self.historical_client.metadata.list_schemas(
-                dataset=Dataset(args.dataset),
+                dataset=args.dataset,
                 start=args.start,
                 end=args.end,
             )
@@ -393,3 +419,37 @@ class DataBentoExplorer(cmd2.Cmd):
             _LOG.exception(exc)
         else:
             self.columnize(result)
+
+    @log_command
+    @cmd2.with_category(METADATA_COMMANDS)
+    @cmd2.with_argparser(_parse_list_unit_prices)  # type: ignore
+    def do_list_unit_prices(self, args):
+        """List unit prices per GB for a dataset"""
+        try:
+            result = self.historical_client.metadata.list_unit_prices(
+                dataset=args.dataset,
+                mode=args.mode,
+                schema=args.schema,
+            )
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            if isinstance(result, float):
+                # If we only have one price just print it.
+                self.poutput(result)
+            else:
+                output = []
+                for mode, unit_prices in result.items():
+                    if args.mode is None:
+                        output.append(f"--- {mode} ---")
+                    output.append(
+                        tabulate(
+                            tabular_data=[
+                                [k, v] for k, v in unit_prices.items()
+                            ],
+                            floatfmt=".2f",
+                            headers=["field", "unit_price"],
+                        )
+                    )
+                self.ppaged("\n\n".join(output))
