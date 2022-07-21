@@ -42,7 +42,7 @@ jobs:
       - name: pytest
         if: always()
         run: |
-          poetry run pytest -v tests --junitxml="pytest_results.xml"
+          poetry run pytest -v --junitxml="pytest_results.xml"
       - name: pytest results
         uses: mikepenz/action-junit-report@v3
         if: always()
