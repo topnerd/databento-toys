@@ -9,6 +9,7 @@ from typing import Type
 from typing import Union
 from unittest.mock import MagicMock
 
+import humanize
 import pytest
 from databento.historical.error import BentoClientError
 from databento.historical.error import BentoHttpError
@@ -109,6 +110,38 @@ def test_command_bentoexception(
     assert_that(output, empty())
 
 
+@pytest.mark.parametrize("command", [pytest.param("get_billable_size")])
+@pytest.mark.parametrize(
+    "args, result",
+    [
+        pytest.param(["GLBX.MDP3", "ESH1", "trades", "json"], 1024),
+        pytest.param(["XNAS.ITCH", "*", "mbo", "dbz"], 892374),
+    ],
+)
+def test_get_billable_size(
+    result: int,
+    dbexplore: DataBentoExplorer,
+    command: str,
+    args: Iterable[str],
+):
+    """Test get_billable_size displaying a list of results.
+    The result is integer number of bytes but we display a human friendly size as well.
+    """
+    cmd_func = getattr(dbexplore.historical_client.metadata, command)
+    cmd_func.return_value = result
+    dbexplore.onecmd(" ".join([command, *args]))
+    cmd_func.assert_called()
+
+    dbexplore.stdout.seek(0)
+    output = dbexplore.stdout.readlines()
+    assert_that(
+        output[0],
+        string_contains_in_order(
+            str(result), humanize.naturalsize(result), "\n"
+        ),
+    )
+
+
 @pytest.mark.parametrize(
     "dataset,symbols,schema,result",
     [
@@ -138,28 +171,27 @@ def test_get_cost(
     assert_that(output[0], equal_to(f"{result:.2f}\n"))
 
 
+@pytest.mark.parametrize("command", [pytest.param("get_shape")])
 @pytest.mark.parametrize(
-    "dataset,symbols,schema,result",
+    "args,result",
     [
-        pytest.param("GLBX.MDP3", "BAC", "trades", [0, 0]),
-        pytest.param("GLBX.MDP3", "TSLA", "mbo", [5, 5]),
-        pytest.param("XNAS.ITCH", "*", "ohlcv-1s", [100, 100]),
+        pytest.param(["GLBX.MDP3", "BAC", "trades"], [0, 0]),
+        pytest.param(["GLBX.MDP3", "TSLA", "mbo"], [5, 5]),
+        pytest.param(["XNAS.ITCH", "*", "ohlcv-1s"], [100, 100]),
     ],
 )
 def test_get_shape(
     result: Iterable[int],
     dbexplore: DataBentoExplorer,
-    schema: str,
-    symbols: str,
-    dataset: str,
-    command: str = "get_shape",
+    command: str,
+    args: Iterable[str],
 ):
     """Test get_size displaying a list of results.
     The result is a tuple with two elements.
     """
     cmd_func = getattr(dbexplore.historical_client.metadata, command)
     cmd_func.return_value = result
-    dbexplore.onecmd(" ".join([command, dataset, symbols, schema]))
+    dbexplore.onecmd(" ".join([command, *args]))
     cmd_func.assert_called()
 
     dbexplore.stdout.seek(0)

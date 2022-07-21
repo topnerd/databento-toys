@@ -22,6 +22,7 @@ colorama = "^0.4.4"
 databento = {git = "https://github.com/databento/databento-python.git", rev="dev"}
 cmd2 = "^2.4.1"
 tabulate = "^0.8.10"
+humanize = "^4.2.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

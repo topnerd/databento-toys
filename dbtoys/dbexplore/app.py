@@ -9,6 +9,7 @@ from typing import Tuple
 
 import cmd2
 import databento
+import humanize
 import pandas
 from colorama import Fore
 from databento.common.enums import Compression
@@ -79,6 +80,45 @@ def main(cantrip: str = "", verbose: bool = False) -> int:
 
 
 # Command Parsers
+_parse_get_billable_size: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
+_parse_get_billable_size.add_argument(
+    "dataset",
+    choices=KNOWN_DATASETS,
+    type=str,
+    help="the target dataset",
+)
+_parse_get_billable_size.add_argument(
+    "symbols", type=str, help="one or more symbols separated by commas"
+)
+_parse_get_billable_size.add_argument(
+    "schema",
+    choices=KNOWN_SCHEMAS,
+    type=str,
+    help="a data schema",
+)
+_parse_get_billable_size.add_argument(
+    "encoding",
+    choices=KNOWN_ENCODINGS,
+    type=str,
+    help="a data encoding",
+)
+_parse_get_billable_size.add_argument(
+    "--start",
+    "-s",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the earlierst date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+_parse_get_billable_size.add_argument(
+    "--end",
+    "-e",
+    type=pandas.Timestamp.fromisoformat,
+    metavar="YYYY-MM-DDTHHMMSS.MMM",
+    help="the latest date in ISO 8601 format",
+    default=pandas.Timestamp.today().date(),
+)
+
 _parse_get_cost: cmd2.Cmd2ArgumentParser = cmd2.Cmd2ArgumentParser()
 _parse_get_cost.add_argument(
     "dataset",
@@ -293,6 +333,27 @@ class DataBentoExplorer(cmd2.Cmd):
     def historical_client(self) -> databento.Historical:
         """The databento historical client"""
         return self._historical_client
+
+    @log_command
+    @cmd2.with_category(METADATA_COMMANDS)
+    @cmd2.with_argparser(_parse_get_billable_size)  # type: ignore
+    def do_get_billable_size(self, args):
+        """Gets the size in bytes of timeseries data."""
+        try:
+            result = self.historical_client.metadata.get_billable_size(
+                dataset=args.dataset,
+                symbols=args.symbols.split(","),
+                schema=args.schema,
+                encoding=args.encoding,
+                start=args.start,
+                end=args.end,
+            )
+        except BentoError as exc:
+            self.perror(f"ERROR: {str(exc)}")
+            _LOG.exception(exc)
+        else:
+            formatted = [str(result), f"({humanize.naturalsize(result)})"]
+            self.columnize(formatted)
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
