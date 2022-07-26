@@ -113,7 +113,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_get_billable_size)  # type: ignore
+    @cmd2.with_argparser(command_parsers.get_billable_size)  # type: ignore
     def do_get_billable_size(self, args):
         """Gets the size in bytes of timeseries data."""
         try:
@@ -134,7 +134,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_get_cost)  # type: ignore
+    @cmd2.with_argparser(command_parsers.get_cost)  # type: ignore
     def do_get_cost(self, args):
         """Gets the cost of timeseries data."""
         try:
@@ -153,7 +153,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_get_shape)  # type: ignore
+    @cmd2.with_argparser(command_parsers.get_shape)  # type: ignore
     def do_get_shape(self, args):
         """Gets the dimensions of timeseries data."""
         try:
@@ -184,7 +184,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_list_datasets)  # type: ignore
+    @cmd2.with_argparser(command_parsers.list_datasets)  # type: ignore
     def do_list_datasets(self, args):
         """List all datasets."""
         try:
@@ -212,7 +212,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_list_fields)  # type: ignore
+    @cmd2.with_argparser(command_parsers.list_fields)  # type: ignore
     def do_list_fields(self, args):
         """List all fields from the given dataset and schema."""
         try:
@@ -243,7 +243,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_list_schemas)  # type: ignore
+    @cmd2.with_argparser(command_parsers.list_schemas)  # type: ignore
     def do_list_schemas(self, args):
         """List all available schemas for a data set within the given start and end dates."""
         try:
@@ -260,7 +260,7 @@ class DataBentoExplorer(cmd2.Cmd):
 
     @log_command
     @cmd2.with_category(METADATA_COMMANDS)
-    @cmd2.with_argparser(command_parsers._parse_list_unit_prices)  # type: ignore
+    @cmd2.with_argparser(command_parsers.list_unit_prices)  # type: ignore
     def do_list_unit_prices(self, args):
         """List unit prices per GB for a dataset"""
         try:
